@@ -6,7 +6,7 @@ import android.os.AsyncTask;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 
-public class TrainTracker extends AsyncTask<Integer, Integer, Marker> {
+public class TrainTracker extends AsyncTask<Integer, Integer, LatLng> {
 
     MapActivity ma;
     public TrainTracker(MapActivity ma){
@@ -14,9 +14,11 @@ public class TrainTracker extends AsyncTask<Integer, Integer, Marker> {
     }
 
     @Override
-    protected Marker doInBackground(Integer... integers) {
-        LatLng position = new LatLng(0,0);
+    protected LatLng doInBackground(Integer... integers) {
+        LatLng position = new LatLng(60,24);
+        //TODO: https://rata.digitraffic.fi/api/v1/train-locations/latest/977
+        // Make api call with the above +
         ma.updateMarker(position);
-        return null;
+        return position;
     }
 }

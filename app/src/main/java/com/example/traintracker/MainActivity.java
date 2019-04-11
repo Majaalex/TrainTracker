@@ -9,6 +9,7 @@ import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
 import android.widget.Button;
+import android.widget.TextClock;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -20,6 +21,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.concurrent.ExecutionException;
 
 public class MainActivity extends AppCompatActivity {
@@ -33,6 +35,8 @@ public class MainActivity extends AppCompatActivity {
     private Button mButtonSet;
     private HashMap<String, String> trainStations;
     private ArrayList<String> stationList;
+
+    private TextView tv;
 
 
     @Override
@@ -69,9 +73,8 @@ public class MainActivity extends AppCompatActivity {
         mTrainList = new ArrayList<>();
         trainStations = new HashMap<>();
         stationList = new ArrayList<>();
-        LocalDateTime localTime = LocalDateTime.now();
-        TextView tv = findViewById(R.id.currentDate);
-        tv.setText(DateTimeFormatter.ofPattern("dd-MM-yyyy   HH:mm").format(localTime));
+        tv = findViewById(R.id.currentDate);
+        updateTime();
         mButtonSet = findViewById(R.id.setStations);
         mButtonSet.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -80,6 +83,11 @@ public class MainActivity extends AppCompatActivity {
                 mAdapter.notifyDataSetChanged();
             }
         });
+    }
+
+    private void updateTime(){
+        LocalDateTime localTime = LocalDateTime.now();
+        tv.setText(DateTimeFormatter.ofPattern("dd-MM-yyyy").format(localTime));
     }
 
     private void createTrainList(){
