@@ -22,7 +22,10 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -130,13 +133,17 @@ public class MainActivity extends AppCompatActivity {
                         String checkDest = currentItem.getString("stationShortCode");
                         // Find the correct departure point
                         if (start.equals(checkStart) && currentItem.get("type").toString().equals("DEPARTURE")){
-                            LocalDateTime time = LocalDateTime.parse(currentItem.get("scheduledTime").toString().substring(0,23));
-                            depTime = DateTimeFormatter.ofPattern("HH:mm").format(time);
+                            String inputTime = currentItem.get("scheduledTime").toString();
+                            Instant time = Instant.parse(inputTime);
+                            ZonedDateTime hki = time.atZone(ZoneId.of("Europe/Helsinki"));
+                            depTime = DateTimeFormatter.ofPattern("HH:mm").format(hki);
                         }
                         // Find the correct arrival point
                         if (dest.equals(checkDest) && currentItem.get("type").toString().equals("ARRIVAL")){
-                            LocalDateTime time = LocalDateTime.parse(currentItem.get("scheduledTime").toString().substring(0,23));
-                            destTime = DateTimeFormatter.ofPattern("HH:mm").format(time);
+                            String inputTime = currentItem.get("scheduledTime").toString();
+                            Instant time = Instant.parse(inputTime);
+                            ZonedDateTime hki = time.atZone(ZoneId.of("Europe/Helsinki"));
+                            destTime = DateTimeFormatter.ofPattern("HH:mm").format(hki);
                         }
                     }
 
