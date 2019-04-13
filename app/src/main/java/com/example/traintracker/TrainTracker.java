@@ -98,15 +98,6 @@ public class TrainTracker extends AsyncTask<Integer, LatLng, String> {
         return null;
     }
 
-    @Override
-    protected void onPostExecute(String s) {
-        super.onPostExecute(s);
-        MapActivity activity = mapActivityWeakReference.get();
-        if (activity == null  || activity.isFinishing()){
-            return;
-        }
-    }
-
     private String HTTPRequest(String... strings){
         String response = "";
         try

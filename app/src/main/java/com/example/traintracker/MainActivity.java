@@ -3,6 +3,7 @@ package com.example.traintracker;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Color;
 import android.nfc.Tag;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -107,6 +108,8 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void createTrainList(){
+        Instant now = Instant.now();
+        ZonedDateTime currentTime = now.atZone(ZoneId.of("Europe/Helsinki"));
         mTrainList.clear();
         String start = trainStations.get(textViewDep.getText().toString());
         String dest = trainStations.get(textViewDest.getText().toString());
@@ -119,6 +122,7 @@ public class MainActivity extends AppCompatActivity {
             // Loop through each train
             for (int i = 0; i < jArr.length(); i++){
                 // Name, departureTime, ArrivalTime
+                String color = String.format("#%06X", 0xFFFFFF & R.color.colorWhite);
                 String name = jArr.getJSONObject(i).get("trainType").toString() + " " + jArr.getJSONObject(i).getString("trainNumber");
                 String trainNum = jArr.getJSONObject(i).getString("trainNumber");
                 String depTime = "";
@@ -135,20 +139,22 @@ public class MainActivity extends AppCompatActivity {
                         if (start.equals(checkStart) && currentItem.get("type").toString().equals("DEPARTURE")){
                             String inputTime = currentItem.get("scheduledTime").toString();
                             Instant time = Instant.parse(inputTime);
-                            ZonedDateTime hki = time.atZone(ZoneId.of("Europe/Helsinki"));
-                            depTime = DateTimeFormatter.ofPattern("HH:mm").format(hki);
+                            ZonedDateTime trainTime = time.atZone(ZoneId.of("Europe/Helsinki"));
+                            depTime = DateTimeFormatter.ofPattern("HH:mm").format(trainTime);
+                            color = returnTextColor(trainTime.compareTo(currentTime));
                         }
                         // Find the correct arrival point
                         if (dest.equals(checkDest) && currentItem.get("type").toString().equals("ARRIVAL")){
                             String inputTime = currentItem.get("scheduledTime").toString();
                             Instant time = Instant.parse(inputTime);
-                            ZonedDateTime hki = time.atZone(ZoneId.of("Europe/Helsinki"));
-                            destTime = DateTimeFormatter.ofPattern("HH:mm").format(hki);
+                            ZonedDateTime trainTime = time.atZone(ZoneId.of("Europe/Helsinki"));
+                            destTime = DateTimeFormatter.ofPattern("HH:mm").format(trainTime);
                         }
+
                     }
 
                 }
-                mTrainList.add(new TrainItem(name, depTime, destTime, trainNum));
+                mTrainList.add(new TrainItem(name, depTime, destTime, trainNum, color));
             }
         } catch (ExecutionException e) {
             e.printStackTrace();
@@ -158,6 +164,22 @@ public class MainActivity extends AppCompatActivity {
             e.printStackTrace();
             Toast.makeText(getApplicationContext(), "You are missing a station or the stations are not connected.", Toast.LENGTH_SHORT).show();
         }
+    }
+
+    private String returnTextColor(int compareTo) {
+        int color = R.color.colorWhite;
+        String strColor = "";
+        // Train time hasn't arrived yet
+        if (compareTo < 0 || compareTo == 0){
+            color = R.color.colorGreenText;
+            strColor = String.format("#%06X", 0xFFFFFF & color);
+        }
+        // Train has already lefte
+        if (compareTo > 0){
+            color = R.color.colorRedText;
+            strColor = String.format("#%06X", 0xFFFFFF & color);
+        }
+        return strColor;
     }
 
     // Build a hashmap with all stations that are for passengerTraffic

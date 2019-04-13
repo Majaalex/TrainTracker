@@ -8,12 +8,14 @@ public class TrainItem implements Serializable {
     private String mTrainNum;
     private String mDepartureTime;
     private String mArrivalTime;
+    private String mColour;
 
-    public TrainItem(String name,String depTime,String arrTime, String trainNum){
+    public TrainItem(String name,String depTime,String arrTime, String trainNum, String colour){
         mName = name;
         mDepartureTime = depTime;
         mArrivalTime = arrTime;
         mTrainNum = trainNum;
+        mColour = colour;
     }
 
     public String getName() {
@@ -30,5 +32,8 @@ public class TrainItem implements Serializable {
 
     public String getTrainNum() {
         return mTrainNum;
+    }
+    public String getColour(){
+        return mColour;
     }
 }
