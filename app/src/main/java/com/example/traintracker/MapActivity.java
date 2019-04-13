@@ -4,6 +4,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.os.PersistableBundle;
 import android.support.v7.app.AppCompatActivity;
+import android.widget.TextView;
 
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
@@ -21,12 +22,12 @@ import java.util.ArrayList;
 public class MapActivity extends AppCompatActivity implements OnMapReadyCallback {
     // Google map vars
     private MapView mapView;
-    private GoogleMap gMap;
-    String gKey;
-    private Marker trainMarker;
-    private MarkerOptions trainMO;
-
+    private String gKey;
+    GoogleMap gMap;
+    Marker trainMarker;
+    MarkerOptions trainMO;
     String trainNum;
+    private TextView mTrainName;
 
     private static final String MAP_VIEW_BUNDLE_KEY = "MapViewBundleKey";
 
@@ -35,25 +36,21 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_map);
         buildMapView(savedInstanceState);
+        mTrainName = findViewById(R.id.mapTrainName);
+
         getTrain();
         startTrainMarker();
     }
 
+    // Start AsyncTask
     private void startTrainMarker() {
-        new TrainTracker(this).execute();
-    }
-
-    void updateMarker(LatLng latLng){
-        trainMO.position(latLng)
-                .title(trainNum)
-        .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE));
-        trainMarker.remove();
-        trainMarker = gMap.addMarker(trainMO);
-        gMap.moveCamera(CameraUpdateFactory.newLatLng(trainMarker.getPosition()));
+        TrainTracker tt = new TrainTracker(this);
+        tt.execute();
     }
 
     private void getTrain() {
         trainNum = getIntent().getStringExtra("number");
+        mTrainName.setText(trainNum);
     }
 
     private void buildMapView(Bundle savedInstanceState) {
@@ -83,9 +80,10 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
     @Override
     public void onMapReady(GoogleMap googleMap) {
         gMap = googleMap;
-        gMap.setMinZoomPreference(12);
-        LatLng ny = new LatLng(40.7143528, -74.0059731);
-        gMap.moveCamera(CameraUpdateFactory.newLatLng(ny));
+        gMap.setMinZoomPreference(8);
+
+        LatLng hki = new LatLng(60.1699, 24.9384);
+        gMap.moveCamera(CameraUpdateFactory.newLatLng(hki));
     }
     @Override
     protected void onResume() {

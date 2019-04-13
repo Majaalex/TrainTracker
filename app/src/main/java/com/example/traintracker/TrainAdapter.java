@@ -67,8 +67,8 @@ public class TrainAdapter extends RecyclerView.Adapter<TrainAdapter.TrainViewHol
     public void onBindViewHolder(@NonNull TrainViewHolder trainViewHolder, int i) {
         TrainItem currentItem = mRouteList.get(i);
         trainViewHolder.mName.setText(currentItem.getName());
-        trainViewHolder.mDepartureTime.setText(currentItem.getmDepartureTime());
-        trainViewHolder.mArrivalTime.setText(currentItem.getmArrivalTime());
+        trainViewHolder.mDepartureTime.setText(currentItem.getDepartureTime());
+        trainViewHolder.mArrivalTime.setText(currentItem.getArrivalTime());
     }
 
     @Override

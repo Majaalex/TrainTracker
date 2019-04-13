@@ -1,11 +1,16 @@
 package com.example.traintracker;
 
+import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
+import android.nfc.Tag;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.View;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
 import android.widget.Button;
@@ -25,19 +30,21 @@ import java.util.Locale;
 import java.util.concurrent.ExecutionException;
 
 public class MainActivity extends AppCompatActivity {
+    private static final String TAG = "MainActivity";
     // RecyclerView variables
     private TrainAdapter mAdapter;
     private RecyclerView mRecyclerView;
     private RecyclerView.LayoutManager mLayoutManager;
     private ArrayList<TrainItem> mTrainList;
+
     AutoCompleteTextView textViewDep;
     AutoCompleteTextView textViewDest;
     private Button mButtonSet;
-    private HashMap<String, String> trainStations;
-    private ArrayList<String> stationList;
-
     private TextView tv;
 
+    private HashMap<String, String> trainStations;
+    private ArrayList<String> stationList;
+    MainActivity ma = this;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -52,6 +59,9 @@ public class MainActivity extends AppCompatActivity {
         buildRecyclerView();
     }
 
+    /*
+    Save functions
+     */
     private void loadData() {
         trainStations = FileIO.loadStations(this);
         stationList.addAll(trainStations.keySet());
@@ -60,7 +70,9 @@ public class MainActivity extends AppCompatActivity {
         FileIO.saveStations(trainStations, this);
     }
 
-    // Connect an adapter with the stationList arraylist to the autocompleteTextViews
+    /*
+    Functions to initialize the view
+     */
     private void buildAutoCompleteTextViews() {
         ArrayAdapter<String> adapter = new ArrayAdapter<>(this, R.layout.support_simple_spinner_dropdown_item, stationList);
         textViewDep = findViewById(R.id.acDepartureLoc);
@@ -80,6 +92,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 createTrainList();
+                hideKeyboard(ma);
                 mAdapter.notifyDataSetChanged();
             }
         });
@@ -95,7 +108,8 @@ public class MainActivity extends AppCompatActivity {
         String start = trainStations.get(textViewDep.getText().toString());
         String dest = trainStations.get(textViewDest.getText().toString());
         LocalDateTime localTime = LocalDateTime.now();
-        String url = "https://rata.digitraffic.fi/api/v1/live-trains/station/" + start + "/" + dest + "?departure_date=" + DateTimeFormatter.ofPattern("yyyy-dd-MM").format(localTime);
+        String url = "https://rata.digitraffic.fi/api/v1/live-trains/station/" + start + "/" + dest + "?departure_date=" + DateTimeFormatter.ofPattern("yyyy-MM-dd").format(localTime);
+        Log.d(TAG, url);
         try {
             String JSONResponse = new HTTPGet().execute(url).get();
             JSONArray jArr = new JSONArray(JSONResponse);
@@ -103,6 +117,7 @@ public class MainActivity extends AppCompatActivity {
             for (int i = 0; i < jArr.length(); i++){
                 // Name, departureTime, ArrivalTime
                 String name = jArr.getJSONObject(i).get("trainType").toString() + " " + jArr.getJSONObject(i).getString("trainNumber");
+                String trainNum = jArr.getJSONObject(i).getString("trainNumber");
                 String depTime = "";
                 String destTime = "";
                 // Loop through each station the train passes by
@@ -126,7 +141,7 @@ public class MainActivity extends AppCompatActivity {
                     }
 
                 }
-                mTrainList.add(new TrainItem(name, depTime, destTime));
+                mTrainList.add(new TrainItem(name, depTime, destTime, trainNum));
             }
         } catch (ExecutionException e) {
             e.printStackTrace();
@@ -185,10 +200,21 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void openInMap(int position){
-        String number = mTrainList.get(position).getName();
+        String number = mTrainList.get(position).getTrainNum();
         Intent map = new Intent(this, MapActivity.class);
         map.putExtra("number", number);
         startActivity(map);
         finish();
+    }
+
+    public static void hideKeyboard(MainActivity activity) {
+        InputMethodManager imm = (InputMethodManager) activity.getSystemService(Activity.INPUT_METHOD_SERVICE);
+        //Find the currently focused view, so we can grab the correct window token from it.
+        View view = activity.getCurrentFocus();
+        //If no view currently has focus, create a new one, just so we can grab a window token from it
+        if (view == null) {
+            view = new View(activity);
+        }
+        imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
     }
 }
