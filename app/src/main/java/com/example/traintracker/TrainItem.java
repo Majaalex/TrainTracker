@@ -10,12 +10,11 @@ public class TrainItem implements Serializable {
     private String mArrivalTime;
     private String mColour;
 
-    public TrainItem(String name,String depTime,String arrTime, String trainNum, String colour){
+    public TrainItem(String name,String depTime,String arrTime, String trainNum){
         mName = name;
         mDepartureTime = depTime;
         mArrivalTime = arrTime;
         mTrainNum = trainNum;
-        mColour = colour;
     }
 
     public String getName() {

@@ -122,7 +122,6 @@ public class MainActivity extends AppCompatActivity {
             // Loop through each train
             for (int i = 0; i < jArr.length(); i++){
                 // Name, departureTime, ArrivalTime
-                String color = String.format("#%06X", 0xFFFFFF & R.color.colorWhite);
                 String name = jArr.getJSONObject(i).get("trainType").toString() + " " + jArr.getJSONObject(i).getString("trainNumber");
                 String trainNum = jArr.getJSONObject(i).getString("trainNumber");
                 String depTime = "";
@@ -141,7 +140,6 @@ public class MainActivity extends AppCompatActivity {
                             Instant time = Instant.parse(inputTime);
                             ZonedDateTime trainTime = time.atZone(ZoneId.of("Europe/Helsinki"));
                             depTime = DateTimeFormatter.ofPattern("HH:mm").format(trainTime);
-                            color = returnTextColor(trainTime.compareTo(currentTime));
                         }
                         // Find the correct arrival point
                         if (dest.equals(checkDest) && currentItem.get("type").toString().equals("ARRIVAL")){
@@ -154,7 +152,7 @@ public class MainActivity extends AppCompatActivity {
                     }
 
                 }
-                mTrainList.add(new TrainItem(name, depTime, destTime, trainNum, color));
+                mTrainList.add(new TrainItem(name, depTime, destTime, trainNum));
             }
         } catch (ExecutionException e) {
             e.printStackTrace();
@@ -230,8 +228,10 @@ public class MainActivity extends AppCompatActivity {
 
     private void openInMap(int position){
         String number = mTrainList.get(position).getTrainNum();
+        String trainDepLoc = trainStations.get(textViewDep.getText().toString());
         Intent map = new Intent(this, MapActivity.class);
         map.putExtra("number", number);
+        map.putExtra("departure", trainDepLoc);
         startActivity(map);
         finish();
     }

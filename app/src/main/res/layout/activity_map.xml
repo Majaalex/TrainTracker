@@ -32,13 +32,29 @@
         style="@android:style/Widget.Material.Light.Button"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="8dp"
-        android:layout_marginTop="8dp"
+        android:layout_marginStart="40dp"
+        android:layout_marginTop="20dp"
         android:layout_marginEnd="8dp"
         android:background="@color/colorAccent"
-        android:text="Track"
-        app:layout_constraintEnd_toEndOf="parent"
+        android:text="Notify"
+        app:layout_constraintEnd_toStartOf="@+id/mapTrainName"
+        app:layout_constraintHorizontal_bias="1.0"
         app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/mapView" />
+
+    <Button
+        android:id="@+id/mapRemoveTrack"
+        style="@android:style/Widget.Material.Light.Button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="20dp"
+        android:layout_marginEnd="8dp"
+        android:background="@color/colorAccent"
+        android:text="Untrack"
+        app:layout_constraintEnd_toStartOf="@+id/mapReturn"
+        app:layout_constraintHorizontal_bias="0.478"
+        app:layout_constraintStart_toEndOf="@+id/mapTrack"
         app:layout_constraintTop_toBottomOf="@+id/mapView" />
 
     <Button
@@ -47,11 +63,12 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="8dp"
-        android:layout_marginTop="8dp"
+        android:layout_marginTop="20dp"
         android:layout_marginEnd="8dp"
         android:background="@color/colorAccent"
         android:text="Return"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toEndOf="@+id/mapTrack"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintStart_toEndOf="@+id/mapTrainName"
         app:layout_constraintTop_toBottomOf="@+id/mapView" />
 </android.support.constraint.ConstraintLayout>

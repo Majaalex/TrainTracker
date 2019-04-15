@@ -1,25 +1,28 @@
 package com.example.traintracker;
 
+import android.app.job.JobInfo;
+import android.app.job.JobScheduler;
+import android.content.ComponentName;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.PersistableBundle;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
+import android.view.View;
+import android.widget.Button;
 import android.widget.TextView;
 
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapView;
 import com.google.android.gms.maps.OnMapReadyCallback;
-import com.google.android.gms.maps.model.BitmapDescriptor;
-import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
-import com.google.android.gms.maps.model.PolylineOptions;
-
-import java.util.ArrayList;
 
 public class MapActivity extends AppCompatActivity implements OnMapReadyCallback {
+    private static final String TAG = "MapActivity";
+    private static final int JobId = 2000;
     // Google map vars
     private MapView mapView;
     private String gKey;
@@ -29,6 +32,10 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
     String trainNum;
     private TextView mTrainName;
 
+    private Button mButtonNotify;
+    private Button mButtonReturn;
+    private Button mButtonStopTrack;
+
     private static final String MAP_VIEW_BUNDLE_KEY = "MapViewBundleKey";
 
     @Override
@@ -36,10 +43,61 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_map);
         buildMapView(savedInstanceState);
-        mTrainName = findViewById(R.id.mapTrainName);
-
+        buildViews();
         getTrain();
         startTrainMarker();
+    }
+
+    private void buildViews() {
+        mTrainName = findViewById(R.id.mapTrainName);
+        mButtonReturn = findViewById(R.id.mapReturn);
+        mButtonNotify = findViewById(R.id.mapTrack);
+        mButtonStopTrack = findViewById(R.id.mapRemoveTrack);
+        mButtonStopTrack.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                cancelTrackerJob();
+            }
+        });
+        mButtonNotify.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                scheduleTrainJob();
+            }
+        });
+        mButtonReturn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent main = new Intent(getApplicationContext(), MainActivity.class);
+                startActivity(main);
+                finish();
+            }
+        });
+    }
+    private void cancelTrackerJob(){
+        JobScheduler scheduler = (JobScheduler) getSystemService(JOB_SCHEDULER_SERVICE);
+        scheduler.cancel(JobId);
+        Log.d(TAG, "Job cancelled");
+    }
+    private void scheduleTrainJob() {
+        PersistableBundle bundle = new PersistableBundle();
+        bundle.putString("trainNum", trainNum);
+        bundle.putString("departure", getIntent().getStringExtra("departure"));
+        ComponentName trainComponent = new ComponentName(this, TrainJobService.class);
+        JobInfo info = new JobInfo.Builder(JobId, trainComponent)
+                .setRequiredNetworkType(JobInfo.NETWORK_TYPE_ANY)
+                .setPersisted(true)
+                .setPeriodic(15 * 60 * 1000)
+                .setExtras(bundle)
+                .build();
+
+        JobScheduler scheduler = (JobScheduler) getSystemService(JOB_SCHEDULER_SERVICE);
+        int resultCode = scheduler.schedule(info);
+        if(resultCode == JobScheduler.RESULT_SUCCESS){
+            Log.d(TAG, "Job Scheduled");
+        } else {
+            Log.d(TAG, "Job scheduling failed");
+        }
     }
 
     // Start AsyncTask

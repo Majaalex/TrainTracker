@@ -32,6 +32,17 @@ public class TrainTracker extends AsyncTask<Integer, LatLng, String> {
     }
 
     @Override
+    protected void onPostExecute(String s) {
+        super.onPostExecute(s);
+        MapActivity activity = mapActivityWeakReference.get();
+        if (activity == null  || activity.isFinishing()){
+            return;
+        }
+        activity.trainMarker.remove();
+
+    }
+
+    @Override
     protected String doInBackground(Integer... integers) {
         trainRunning = true;
         while (trainRunning) {
