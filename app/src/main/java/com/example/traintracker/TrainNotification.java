@@ -1,5 +1,6 @@
 package com.example.traintracker;
 
+import android.app.Notification;
 import android.content.Context;
 import android.os.AsyncTask;
 import android.support.v4.app.NotificationCompat;
@@ -21,6 +22,8 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.concurrent.ExecutionException;
 
+import static com.example.traintracker.App.CHANNEL_1_ID;
+
 public class TrainNotification extends AsyncTask<Integer, Integer, String> {
     public static final String TAG = "TrainNotification";
     public static final String CHANNEL_ID = "150000";
@@ -32,7 +35,7 @@ public class TrainNotification extends AsyncTask<Integer, Integer, String> {
         mContext = context;
         mTrainNum = trainNum;
         mTrainShortCode = trainShortCode;
-        NotificationManagerCompat notificationManager = NotificationManagerCompat.from(mContext);
+        notificationManager = NotificationManagerCompat.from(mContext);
     }
     @Override
     protected String doInBackground(Integer... integers) {
@@ -58,11 +61,12 @@ public class TrainNotification extends AsyncTask<Integer, Integer, String> {
                 Instant scheduledITime = Instant.parse(scheduledTimeString);
                 ZonedDateTime scheduledTime = scheduledITime.atZone(ZoneId.of("Europe/Helsinki"));
                 String actualTimeString = departurePoint.getString("actualTime");
+                Log.d(TAG, "timestring " + actualTimeString);
+                if (actualTimeString.equals("")){
+                    actualTimeString = scheduledTimeString;
+                }
                 Instant actualITime = Instant.parse(actualTimeString);
                 ZonedDateTime actualTime = actualITime.atZone(ZoneId.of("Europe/Helsinki"));
-                if (actualTime == null){
-                    actualTime = scheduledTime;
-                }
                 Instant now = Instant.now();
                 // Convert all times to minutes so 2:30 becomes 150
                 double currentHour = Double.parseDouble(DateTimeFormatter.ofPattern("HH").format(now));
@@ -88,11 +92,9 @@ public class TrainNotification extends AsyncTask<Integer, Integer, String> {
                     notifyTrainDeprtingInSub15(DateTimeFormatter.ofPattern("HH:mm").format(actualTime));
                 }
             }
-            // format: JSONArray.JSONObject(0).JSONArray("timeTableRows").JSONObject(i).
         } catch (JSONException e) {
             e.printStackTrace();
         }
-        // fetch scheduledTime and liveEstimateTime as format 2019-04-15T13:27:00.000Z
 
 
 
@@ -101,39 +103,43 @@ public class TrainNotification extends AsyncTask<Integer, Integer, String> {
     }
 
     private void notifyTrainDelayed(String departureTime){
-        NotificationCompat.Builder builder = new NotificationCompat.Builder(mContext, CHANNEL_ID)
+        Notification builder = new NotificationCompat.Builder(mContext, CHANNEL_1_ID)
                 .setSmallIcon(R.drawable.ic_train_green)
                 .setShowWhen(false)
                 .setContentTitle("Train " + mTrainNum + " has been delayed.")
-                .setContentText("The train is delayed by at least 15 minutes and will depart at " + departureTime + ".");
-        notificationManager.notify(150001, builder.build());
+                .setContentText("The train is delayed by at least 15 minutes and will depart at " + departureTime + ".")
+                .build();
+        notificationManager.notify(150001, builder);
     }
 
     private void notifyTrainDepartingInAnHour(String departureTime){
-        NotificationCompat.Builder builder = new NotificationCompat.Builder(mContext, CHANNEL_ID)
+        Notification builder = new NotificationCompat.Builder(mContext, CHANNEL_1_ID)
                 .setSmallIcon(R.drawable.ic_train_green)
                 .setShowWhen(false)
                 .setContentTitle("Departure in about 60 minutes.")
-                .setContentText("Train " + mTrainNum + " will depart in about 60 minutes, at " + departureTime + ".");
-        notificationManager.notify(150001, builder.build());
+                .setContentText("Train " + mTrainNum + " will depart in about 60 minutes, at " + departureTime + ".")
+                .build();
+        notificationManager.notify(150001, builder);
     }
 
     private void notifyTrainDepartingIn35(String departureTime){
-        NotificationCompat.Builder builder = new NotificationCompat.Builder(mContext, CHANNEL_ID)
+        Notification builder = new NotificationCompat.Builder(mContext, CHANNEL_1_ID)
                 .setSmallIcon(R.drawable.ic_train_green)
                 .setShowWhen(false)
                 .setContentTitle("Departure in about 35 minutes.")
-                .setContentText("Train " + mTrainNum + " will depart in about 35 minutes, at " + departureTime  + ".");
-        notificationManager.notify(150001, builder.build());
+                .setContentText("Train " + mTrainNum + " will depart in about 35 minutes, at " + departureTime  + ".")
+                .build();
+        notificationManager.notify(150001, builder);
     }
 
     private void notifyTrainDeprtingInSub15(String departureTime){
-        NotificationCompat.Builder builder = new NotificationCompat.Builder(mContext, CHANNEL_ID)
+        Notification builder = new NotificationCompat.Builder(mContext, CHANNEL_1_ID)
                 .setSmallIcon(R.drawable.ic_train_green)
                 .setShowWhen(false)
                 .setContentTitle("Departure in less than 15 minutes.")
-                .setContentText("Train " + mTrainNum + " will depart in under 15 minutes, at " + departureTime + ".");
-        notificationManager.notify(150001, builder.build());
+                .setContentText("Train " + mTrainNum + " will depart in under 15 minutes, at " + departureTime + ".")
+                .build();
+        notificationManager.notify(150001, builder);
     }
 
     private String HTTPRequest(String... strings){

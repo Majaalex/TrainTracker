@@ -2,6 +2,8 @@ package com.example.traintracker;
 
 import android.app.Activity;
 import android.app.Notification;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
@@ -36,6 +38,8 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.concurrent.ExecutionException;
 
+import static com.example.traintracker.App.CHANNEL_1_ID;
+
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = "MainActivity";
     // RecyclerView variables
@@ -64,11 +68,12 @@ public class MainActivity extends AppCompatActivity {
         buildTrainStationList(trainStations);
         buildAutoCompleteTextViews();
         buildRecyclerView();
-        notifyTrainDepartingIn35("15:00");
+        //notifyTrainDepartingIn35("15:00");
     }
     private void notifyTrainDepartingIn35(String departureTime){
+
         NotificationManagerCompat notificationManager = NotificationManagerCompat.from(this);
-        Notification builder = new NotificationCompat.Builder(this, "1300")
+        Notification builder = new NotificationCompat.Builder(this, CHANNEL_1_ID)
                 .setSmallIcon(R.drawable.ic_train_green)
                 .setShowWhen(false)
                 .setContentTitle("Departure in about 35 minutes.")
