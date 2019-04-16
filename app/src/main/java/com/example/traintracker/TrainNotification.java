@@ -25,8 +25,7 @@ import java.util.concurrent.ExecutionException;
 import static com.example.traintracker.App.CHANNEL_1_ID;
 
 public class TrainNotification extends AsyncTask<Integer, Integer, String> {
-    public static final String TAG = "TrainNotification";
-    public static final String CHANNEL_ID = "150000";
+    private static final String TAG = "TrainNotification";
     private NotificationManagerCompat notificationManager;
     private String mTrainNum;
     private String mTrainShortCode;
