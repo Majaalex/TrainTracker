@@ -1,10 +1,13 @@
 package com.example.traintracker;
 
 import android.app.Activity;
+import android.app.Notification;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
 import android.nfc.Tag;
+import android.support.v4.app.NotificationCompat;
+import android.support.v4.app.NotificationManagerCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.LinearLayoutManager;
@@ -61,6 +64,17 @@ public class MainActivity extends AppCompatActivity {
         buildTrainStationList(trainStations);
         buildAutoCompleteTextViews();
         buildRecyclerView();
+        notifyTrainDepartingIn35("15:00");
+    }
+    private void notifyTrainDepartingIn35(String departureTime){
+        NotificationManagerCompat notificationManager = NotificationManagerCompat.from(this);
+        Notification builder = new NotificationCompat.Builder(this, "1300")
+                .setSmallIcon(R.drawable.ic_train_green)
+                .setShowWhen(false)
+                .setContentTitle("Departure in about 35 minutes.")
+                .setContentText("Train " + 100 + " will depart in about 35 minutes, at " + departureTime  + ".")
+                .build();
+        notificationManager.notify(1, builder);
     }
 
     /*

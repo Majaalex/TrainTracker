@@ -38,7 +38,7 @@ public class TrainTracker extends AsyncTask<Integer, LatLng, String> {
         if (activity == null  || activity.isFinishing()){
             return;
         }
-        activity.trainMarker.remove();
+        if (activity.trainMarker != null) activity.trainMarker.remove();
 
     }
 
