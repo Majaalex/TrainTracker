@@ -57,6 +57,10 @@ public class MainActivity extends AppCompatActivity {
     private ArrayList<String> stationList;
     MainActivity ma = this;
 
+    public static final String extraNum = "number";
+    public static final String extraDepLoc = "departure";
+    public static final String extraDepTime = "depTime";
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -127,8 +131,6 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void createTrainList(){
-        Instant now = Instant.now();
-        ZonedDateTime currentTime = now.atZone(ZoneId.of("Europe/Helsinki"));
         mTrainList.clear();
         String start = trainStations.get(textViewDep.getText().toString());
         String dest = trainStations.get(textViewDest.getText().toString());
@@ -139,12 +141,14 @@ public class MainActivity extends AppCompatActivity {
             String JSONResponse = new HTTPGet().execute(url).get();
             JSONArray jArr = new JSONArray(JSONResponse);
             // Loop through each train
+            String depTime = "";
+            String destTime = "";
+            String fullDepTime = "";
             for (int i = 0; i < jArr.length(); i++){
                 // Name, departureTime, ArrivalTime
                 String name = jArr.getJSONObject(i).get("trainType").toString() + " " + jArr.getJSONObject(i).getString("trainNumber");
                 String trainNum = jArr.getJSONObject(i).getString("trainNumber");
-                String depTime = "";
-                String destTime = "";
+
                 // Loop through each station the train passes by
                 for (int j = 0; j < jArr.getJSONObject(i).getJSONArray("timeTableRows").length(); j++){
                     // Only check stations that the train actually stops at
@@ -158,6 +162,7 @@ public class MainActivity extends AppCompatActivity {
                             String inputTime = currentItem.get("scheduledTime").toString();
                             Instant time = Instant.parse(inputTime);
                             ZonedDateTime trainTime = time.atZone(ZoneId.of("Europe/Helsinki"));
+                            fullDepTime = inputTime;
                             depTime = DateTimeFormatter.ofPattern("HH:mm").format(trainTime);
                         }
                         // Find the correct arrival point
@@ -171,7 +176,7 @@ public class MainActivity extends AppCompatActivity {
                     }
 
                 }
-                mTrainList.add(new TrainItem(name, depTime, destTime, trainNum));
+                mTrainList.add(new TrainItem(name, depTime, destTime, trainNum, fullDepTime));
             }
         } catch (ExecutionException e) {
             e.printStackTrace();
@@ -247,10 +252,12 @@ public class MainActivity extends AppCompatActivity {
 
     private void openInMap(int position){
         String number = mTrainList.get(position).getTrainNum();
+        String depTime = mTrainList.get(position).getFullDepTime();
         String trainDepLoc = trainStations.get(textViewDep.getText().toString());
         Intent map = new Intent(this, MapActivity.class);
-        map.putExtra("number", number);
-        map.putExtra("departure", trainDepLoc);
+        map.putExtra(extraNum, number);
+        map.putExtra(extraDepLoc, trainDepLoc);
+        map.putExtra(extraDepTime, depTime);
         startActivity(map);
         finish();
     }

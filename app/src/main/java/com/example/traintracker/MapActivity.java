@@ -20,6 +20,10 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 
+import static com.example.traintracker.MainActivity.extraDepLoc;
+import static com.example.traintracker.MainActivity.extraDepTime;
+import static com.example.traintracker.MainActivity.extraNum;
+
 public class MapActivity extends AppCompatActivity implements OnMapReadyCallback {
     private static final String TAG = "MapActivity";
     private static final int JobId = 2000;
@@ -30,6 +34,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
     Marker trainMarker;
     MarkerOptions trainMO;
     String trainNum;
+    String trainDepTime;
     private TextView mTrainName;
 
     private Button mButtonNotify;
@@ -81,8 +86,9 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
     }
     private void scheduleTrainJob() {
         PersistableBundle bundle = new PersistableBundle();
-        bundle.putString("trainNum", trainNum);
-        bundle.putString("departure", getIntent().getStringExtra("departure"));
+        bundle.putString(extraNum, trainNum);
+        bundle.putString(extraDepLoc, getIntent().getStringExtra(extraDepLoc));
+        bundle.putString(extraDepTime, getIntent().getStringExtra(extraDepTime));
         ComponentName trainComponent = new ComponentName(this, TrainJobService.class);
         JobInfo info = new JobInfo.Builder(JobId, trainComponent)
                 .setRequiredNetworkType(JobInfo.NETWORK_TYPE_ANY)
@@ -107,7 +113,8 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
     }
 
     private void getTrain() {
-        trainNum = getIntent().getStringExtra("number");
+        trainNum = getIntent().getStringExtra(extraNum);
+        trainDepTime = getIntent().getStringExtra(extraDepTime);
         mTrainName.setText(trainNum);
     }
 

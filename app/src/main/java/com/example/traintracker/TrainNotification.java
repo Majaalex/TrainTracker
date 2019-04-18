@@ -15,90 +15,123 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.sql.Date;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.concurrent.ExecutionException;
+import java.time.temporal.ChronoUnit;
 
 import static com.example.traintracker.App.CHANNEL_1_ID;
 
-public class TrainNotification extends AsyncTask<Integer, Integer, String> {
+public class TrainNotification extends AsyncTask<Integer, Integer, ZonedDateTime> {
     private static final String TAG = "TrainNotification";
     private NotificationManagerCompat notificationManager;
     private String mTrainNum;
-    private String mTrainShortCode;
+    private String mDepShortCode;
+    private String mFullDepTime;
     private Context mContext;
-    TrainNotification(Context context, String trainNum, String trainShortCode){
+    TrainNotification(Context context, String trainNum, String trainShortCode, String fullDepTime){
         mContext = context;
         mTrainNum = trainNum;
-        mTrainShortCode = trainShortCode;
+        mDepShortCode = trainShortCode;
+        mFullDepTime = fullDepTime;
         notificationManager = NotificationManagerCompat.from(mContext);
     }
     @Override
-    protected String doInBackground(Integer... integers) {
+    protected ZonedDateTime doInBackground(Integer... integers) {
+        return apiCallAndNotification();
+    }
+
+    @Override
+    protected void onPostExecute(ZonedDateTime zonedDateTime) {
+        Log.d(TAG, "onPostExecute: " + zonedDateTime);
+        super.onPostExecute(zonedDateTime);
+    }
+
+    private ZonedDateTime apiCallAndNotification() {
         //TODO: https://rata.digitraffic.fi/api/v1/trains/latest/114
         // Make asynctask/thread to get info from above API
 
         String url = "https://rata.digitraffic.fi/api/v1/trains/latest/" + mTrainNum;
         JSONObject departurePoint = new JSONObject();
         Log.d(TAG, url);
+        Instant originalTime = Instant.parse(mFullDepTime);
+        ZonedDateTime zonedTime = originalTime.atZone(ZoneId.of("Europe/Helsinki"));
+        // Since TrainJobService is run every 15 minutes, we want a 15 minute window for the hour until departure
+        ZonedDateTime oneHourUntilDeparture = zonedTime.minus(1, ChronoUnit.HOURS);
+        oneHourUntilDeparture = oneHourUntilDeparture.minus(15, ChronoUnit.MINUTES);
+        ZonedDateTime actualDepartureTime = null;
+        // If current time is later than oneHourUntilDeparture
+        if (oneHourUntilDeparture.compareTo(ZonedDateTime.now()) < 0){
+            Log.d(TAG, "apiCallAndNotification: after first compare");
+            departurePoint = fetchTrainInfo(url, departurePoint);
+            actualDepartureTime = fetchTrainDepartureTime(departurePoint);
+            //compareTimes(actualDepartureTime);
+            Log.d(TAG, "apiCallAndNotification: " + actualDepartureTime);
+        }
+        return actualDepartureTime;
+    }
+
+    private void compareTimes(ZonedDateTime actualDepartureTime) {
+        String hhmmTime;
+        if (actualDepartureTime != null){
+            ZonedDateTime thirtyUntilDeparture = actualDepartureTime.minus(40, ChronoUnit.MINUTES);
+            ZonedDateTime tenUntilDeparture = actualDepartureTime.minus(15, ChronoUnit.MINUTES);
+            hhmmTime = DateTimeFormatter.ofPattern("HH:mm").format(actualDepartureTime);
+            if (thirtyUntilDeparture.compareTo(ZonedDateTime.now()) < 0){ // If there is less than 30 minutes until departure
+                Log.d(TAG, "apiCallAndNotification: depart in under 30");
+                if (tenUntilDeparture.compareTo(ZonedDateTime.now()) < 0){ // If the train is departing in under 10 minutes
+                    Log.d(TAG, "apiCallAndNotification: depart in under 10");
+                    // Notify that there is under 10 minutes left
+                    notifyTrainDeprtingInSub15(hhmmTime);
+                } else {
+                    // Notify that the train is departing in under 30 minutes
+                    notifyTrainDepartingIn35(hhmmTime);
+                }
+            } else {
+                // Notify that there is an hour left
+                notifyTrainDepartingInAnHour(hhmmTime);
+            }
+        }
+    }
+
+    private ZonedDateTime fetchTrainDepartureTime(JSONObject departurePoint) {
+        String actualTime = "";
+        String scheduledtime = "";
+        try {
+            scheduledtime = departurePoint.getString("scheduledTime");
+            Log.d(TAG, "fetchTrainDepartureTime: scheduledtime " + scheduledtime);
+            actualTime = departurePoint.getString("actualTime");
+            Log.d(TAG, "fetchTrainDepartureTime: actualTime " + actualTime);
+
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        if (actualTime.equals("undefined") || actualTime.equals("")){
+            Log.d(TAG, "fetchTrainDepartureTime: going by scheduledtime");
+            return Instant.parse(scheduledtime).atZone(ZoneId.of("Europe/Helsinki"));
+        } else {
+            Log.d(TAG, "fetchTrainDepartureTime: going by actual Time");
+            return Instant.parse(actualTime).atZone(ZoneId.of("Europe/Helsinki"));
+        }
+    }
+
+    private JSONObject fetchTrainInfo(String url, JSONObject departurePoint){
         try {
             String JSONResponse = HTTPRequest(url);
             JSONArray jArr = new JSONArray(JSONResponse);
             JSONArray timeTableJArr = jArr.getJSONObject(0).getJSONArray("timeTableRows");
             for (int i = 0; i < timeTableJArr.length(); i++){
-                if (timeTableJArr.getJSONObject(i).getString("stationShortCode").equals(mTrainShortCode) && timeTableJArr.getJSONObject(i).get("type").toString().equals("DEPARTURE")){
+                if (timeTableJArr.getJSONObject(i).getString("stationShortCode").equals(mDepShortCode) && timeTableJArr.getJSONObject(i).get("type").toString().equals("DEPARTURE")){
                     departurePoint = timeTableJArr.getJSONObject(i);
                     break;
-                }
-            }
-            if (departurePoint != null){
-
-                String scheduledTimeString = departurePoint.getString("scheduledTime");
-                Instant scheduledITime = Instant.parse(scheduledTimeString);
-                ZonedDateTime scheduledTime = scheduledITime.atZone(ZoneId.of("Europe/Helsinki"));
-                String actualTimeString = departurePoint.getString("actualTime");
-                Log.d(TAG, "timestring " + actualTimeString);
-                if (actualTimeString.equals("")){
-                    actualTimeString = scheduledTimeString;
-                }
-                Instant actualITime = Instant.parse(actualTimeString);
-                ZonedDateTime actualTime = actualITime.atZone(ZoneId.of("Europe/Helsinki"));
-                Instant now = Instant.now();
-                // Convert all times to minutes so 2:30 becomes 150
-                double currentHour = Double.parseDouble(DateTimeFormatter.ofPattern("HH").format(now));
-                double currentMinutes = Double.parseDouble(DateTimeFormatter.ofPattern("mm").format(now)) + currentHour * 60;
-                double scheduledHour = Double.parseDouble(DateTimeFormatter.ofPattern("HH").format(scheduledTime));
-                double scheduledMinutes = Double.parseDouble(DateTimeFormatter.ofPattern("mm").format(scheduledTime)) + scheduledHour * 60;
-                double actualHour = Double.parseDouble(DateTimeFormatter.ofPattern("HH").format(actualTime));
-                double actualMinutes = Double.parseDouble(DateTimeFormatter.ofPattern("mm").format(actualTime)) + actualHour * 60;
-                // Train is delayed more than 15 minutes
-                if (actualMinutes - scheduledMinutes >= 15 && actualMinutes - currentMinutes >= 75 ){
-                    notifyTrainDelayed(DateTimeFormatter.ofPattern("HH:mm").format(actualTime));
-                }
-                // Train departing in about an hour
-                if (actualMinutes - currentMinutes <= 70 && actualMinutes - currentMinutes >= 55){
-                    notifyTrainDepartingInAnHour(DateTimeFormatter.ofPattern("HH:mm").format(actualTime));
-                }
-                // Train departing in about 35 minutes
-                if (actualMinutes - currentMinutes < 45 && actualMinutes - currentMinutes >= 25){
-                    notifyTrainDepartingIn35(DateTimeFormatter.ofPattern("HH:mm").format(actualTime));
-                }
-                // Train departing within 15 minutes
-                if (actualMinutes - currentMinutes < 15){
-                    notifyTrainDeprtingInSub15(DateTimeFormatter.ofPattern("HH:mm").format(actualTime));
                 }
             }
         } catch (JSONException e) {
             e.printStackTrace();
         }
 
-
-
-
-        return null;
+        return departurePoint;
     }
 
     private void notifyTrainDelayed(String departureTime){
