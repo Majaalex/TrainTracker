@@ -92,7 +92,6 @@ public class TrainTracker extends AsyncTask<Integer, LatLng, String> {
         String jResponse = "";
         LatLng position;
         try {
-            Log.d(TAG, "fetchTrainCoordinates: url: " + url);
             jResponse = HTTPRequest(url);
             if (!jResponse.equals("")){
                 JSONArray jArr = new JSONArray(jResponse);

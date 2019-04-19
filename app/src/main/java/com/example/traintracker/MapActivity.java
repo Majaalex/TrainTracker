@@ -36,6 +36,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
     String trainNum;
     String trainDepTime;
     private TextView mTrainName;
+    private Boolean notifierRunning = false;
 
     private Button mButtonNotify;
     private Button mButtonReturn;
@@ -80,29 +81,36 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
         });
     }
     private void cancelTrackerJob(){
-        JobScheduler scheduler = (JobScheduler) getSystemService(JOB_SCHEDULER_SERVICE);
-        scheduler.cancel(JobId);
-        Log.d(TAG, "Job cancelled");
+        if (notifierRunning){
+            notifierRunning = false;
+            JobScheduler scheduler = (JobScheduler) getSystemService(JOB_SCHEDULER_SERVICE);
+            scheduler.cancel(JobId);
+        }
+
     }
     private void scheduleTrainJob() {
-        PersistableBundle bundle = new PersistableBundle();
-        bundle.putString(extraNum, trainNum);
-        bundle.putString(extraDepLoc, getIntent().getStringExtra(extraDepLoc));
-        bundle.putString(extraDepTime, getIntent().getStringExtra(extraDepTime));
-        ComponentName trainComponent = new ComponentName(this, TrainJobService.class);
-        JobInfo info = new JobInfo.Builder(JobId, trainComponent)
-                .setRequiredNetworkType(JobInfo.NETWORK_TYPE_ANY)
-                .setPersisted(true)
-                .setPeriodic(15 * 60 * 1000)
-                .setExtras(bundle)
-                .build();
+        if (!notifierRunning){
+            notifierRunning = true;
+            PersistableBundle bundle = new PersistableBundle();
+            bundle.putString(extraNum, trainNum);
+            bundle.putString(extraDepLoc, getIntent().getStringExtra(extraDepLoc));
+            bundle.putString(extraDepTime, getIntent().getStringExtra(extraDepTime));
+            ComponentName trainComponent = new ComponentName(this, TrainJobService.class);
+            JobInfo info = new JobInfo.Builder(JobId, trainComponent)
+                    .setRequiredNetworkType(JobInfo.NETWORK_TYPE_ANY)
+                    .setPersisted(true)
+                    .setPeriodic(15 * 60 * 1000)
+                    .setExtras(bundle)
+                    .build();
 
-        JobScheduler scheduler = (JobScheduler) getSystemService(JOB_SCHEDULER_SERVICE);
-        int resultCode = scheduler.schedule(info);
-        if(resultCode == JobScheduler.RESULT_SUCCESS){
-            Log.d(TAG, "Job Scheduled");
-        } else {
-            Log.d(TAG, "Job scheduling failed");
+            JobScheduler scheduler = (JobScheduler) getSystemService(JOB_SCHEDULER_SERVICE);
+            int resultCode = scheduler.schedule(info);
+            if(resultCode == JobScheduler.RESULT_SUCCESS){
+                Log.d(TAG, "Job Scheduled");
+            } else {
+                Log.d(TAG, "Job scheduling failed");
+                notifierRunning = false;
+            }
         }
     }
 
