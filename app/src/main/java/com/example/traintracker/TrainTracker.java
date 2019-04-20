@@ -26,10 +26,18 @@ public class TrainTracker extends AsyncTask<Integer, LatLng, String> {
     private WeakReference<MapActivity> mapActivityWeakReference;
     private Boolean trainRunning;
 
-    //
+    // Weakreference to stop memeoryLeak while being able to access the google map for updating
     TrainTracker(MapActivity activity){
         mapActivityWeakReference = new WeakReference<>(activity);
     }
+
+    @Override
+    protected void onPreExecute() {
+        super.onPreExecute();
+        trainRunning = true;
+    }
+
+
 
     @Override
     protected void onPostExecute(String s) {
@@ -38,22 +46,22 @@ public class TrainTracker extends AsyncTask<Integer, LatLng, String> {
         if (activity == null  || activity.isFinishing()){
             return;
         }
+        // Once the task has finished, remove the marker
         if (activity.trainMarker != null) activity.trainMarker.remove();
 
     }
 
     @Override
     protected String doInBackground(Integer... integers) {
-        trainRunning = true;
         while (trainRunning) {
             LatLng coords = fetchTrainCoordinates();
             if (coords != null){
                 publishProgress(coords);
-            } else {
+            } else { // The JSON is empty if the train isn't running
                 trainRunning = false;
                 return "The train is not running.";
             }
-            try {
+            try { // Sleep for 15 seconds since the API updates roughly that often.
                 TimeUnit.SECONDS.sleep(15);
             } catch (InterruptedException e) {
                 e.printStackTrace();
@@ -67,6 +75,7 @@ public class TrainTracker extends AsyncTask<Integer, LatLng, String> {
         updateMarker(values[0]);
     }
 
+    // Updates the google map marker with a new position
     private void updateMarker(LatLng latLng){
         MapActivity activity = mapActivityWeakReference.get();
         if (activity == null  || activity.isFinishing()){
@@ -83,6 +92,7 @@ public class TrainTracker extends AsyncTask<Integer, LatLng, String> {
         activity.gMap.moveCamera(CameraUpdateFactory.newLatLng(activity.trainMarker.getPosition()));
     }
 
+    // Fetch the coordinates of the selected train from the API
     private LatLng fetchTrainCoordinates() {
         MapActivity activity = mapActivityWeakReference.get();
         if (activity == null  || activity.isFinishing()){

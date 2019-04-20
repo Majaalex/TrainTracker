@@ -18,7 +18,7 @@ public class App extends Application {
                 "Channel 1",
                 NotificationManager.IMPORTANCE_DEFAULT
         );
-        channel1.setDescription("Channel 1");
+        channel1.setDescription("Channel 1 for all notifications regarding train departures and delays.");
 
         NotificationManager manager = getSystemService(NotificationManager.class);
         manager.createNotificationChannel(channel1);

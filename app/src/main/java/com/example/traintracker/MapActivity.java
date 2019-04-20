@@ -80,14 +80,19 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
             }
         });
     }
+
+    // Cancel the JobService notifying about train departures
     private void cancelTrackerJob(){
         if (notifierRunning){
             notifierRunning = false;
             JobScheduler scheduler = (JobScheduler) getSystemService(JOB_SCHEDULER_SERVICE);
-            scheduler.cancel(JobId);
+            scheduler.cancelAll();
+            //scheduler.cancel(JobId);
         }
 
     }
+
+    // Start the JobService to notify about the train departures
     private void scheduleTrainJob() {
         if (!notifierRunning){
             notifierRunning = true;
@@ -114,18 +119,23 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
         }
     }
 
-    // Start AsyncTask
+    // Start AsyncTask for tracking the trains position
     private void startTrainMarker() {
         TrainTracker tt = new TrainTracker(this);
         tt.execute();
     }
 
+    // Extract the train number and departure time from the intent
     private void getTrain() {
         trainNum = getIntent().getStringExtra(extraNum);
         trainDepTime = getIntent().getStringExtra(extraDepTime);
         mTrainName.setText(trainNum);
     }
 
+    /*-----------------------------------------
+    Google map methods
+    Build the map, and override the methods necessary
+     */
     private void buildMapView(Bundle savedInstanceState) {
         Bundle mapViewBundle = null;
         if (savedInstanceState != null) {

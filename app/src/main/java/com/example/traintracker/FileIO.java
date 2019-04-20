@@ -16,6 +16,7 @@ import java.util.HashMap;
 
 public class FileIO {
 
+    // Store the selected object on the device
     public static void saveStations(HashMap<String, String> trainStations, Activity activity){
         System.out.println("Saving routes");
         try {
@@ -33,6 +34,7 @@ public class FileIO {
         }
     }
 
+    // Load the selected data from the device
     public static HashMap<String, String> loadStations(Activity activity){
         System.out.println("Loading routes");
         HashMap<String, String> trainStations = new HashMap<>();

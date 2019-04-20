@@ -48,6 +48,7 @@ public class MainActivity extends AppCompatActivity {
     private RecyclerView.LayoutManager mLayoutManager;
     private ArrayList<TrainItem> mTrainList;
 
+    // View variables
     AutoCompleteTextView textViewDep;
     AutoCompleteTextView textViewDest;
     private Button mButtonSet;
@@ -57,6 +58,7 @@ public class MainActivity extends AppCompatActivity {
     private ArrayList<String> stationList;
     MainActivity ma = this;
 
+    // Static names for the fields that are sent to MapActivity when a route is selected
     public static final String extraNum = "number";
     public static final String extraDepLoc = "departure";
     public static final String extraDepTime = "depTime";
@@ -66,24 +68,11 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         setButtonsAndFields();
-
         loadData();
         // is only run if loadData returns an empty set of values
         buildTrainStationList(trainStations);
         buildAutoCompleteTextViews();
         buildRecyclerView();
-        //notifyTrainDepartingIn35("15:00");
-    }
-    private void notifyTrainDepartingIn35(String departureTime){
-
-        NotificationManagerCompat notificationManager = NotificationManagerCompat.from(this);
-        Notification builder = new NotificationCompat.Builder(this, CHANNEL_1_ID)
-                .setSmallIcon(R.drawable.ic_train_green)
-                .setShowWhen(false)
-                .setContentTitle("Departure in about 35 minutes.")
-                .setContentText("Train " + 100 + " will depart in about 35 minutes, at " + departureTime  + ".")
-                .build();
-        notificationManager.notify(1, builder);
     }
 
     /*
@@ -131,6 +120,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void createTrainList(){
+        // mTrainList is the list the recyclerView uses for building data
         mTrainList.clear();
         String start = trainStations.get(textViewDep.getText().toString());
         String dest = trainStations.get(textViewDest.getText().toString());
@@ -188,22 +178,6 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private String returnTextColor(int compareTo) {
-        int color = R.color.colorWhite;
-        String strColor = "";
-        // Train time hasn't arrived yet
-        if (compareTo < 0 || compareTo == 0){
-            color = R.color.colorGreenText;
-            strColor = String.format("#%06X", 0xFFFFFF & color);
-        }
-        // Train has already lefte
-        if (compareTo > 0){
-            color = R.color.colorRedText;
-            strColor = String.format("#%06X", 0xFFFFFF & color);
-        }
-        return strColor;
-    }
-
     // Build a hashmap with all stations that are for passengerTraffic
     // Is only run if trainStations hashmap is empty
     private void buildTrainStationList(HashMap<String, String> trainStations) {
@@ -250,7 +224,9 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
+    // Opens the MapActivity when a route is selected
     private void openInMap(int position){
+        // Send the train number, departure time and departure location to the MapActivity
         String number = mTrainList.get(position).getTrainNum();
         String depTime = mTrainList.get(position).getFullDepTime();
         String trainDepLoc = trainStations.get(textViewDep.getText().toString());

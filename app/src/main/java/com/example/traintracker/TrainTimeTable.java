@@ -1,11 +1,6 @@
 package com.example.traintracker;
 
-import android.app.Notification;
-import android.content.Context;
 import android.os.AsyncTask;
-import android.support.v4.app.NotificationCompat;
-import android.support.v4.app.NotificationManagerCompat;
-import android.util.Log;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -18,24 +13,21 @@ import java.net.URL;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 
-import static com.example.traintracker.App.CHANNEL_1_ID;
-
-public class TrainNotification extends AsyncTask<Integer, Integer, ZonedDateTime> {
-    private static final String TAG = "TrainNotification";
+public class TrainTimeTable extends AsyncTask<Integer, Integer, ZonedDateTime> {
+    private static final String TAG = "TrainTimeTable";
     private String mTrainNum;
     private String mDepShortCode;
     private String mFullDepTime;
-    TrainNotification(String trainNum, String trainShortCode, String fullDepTime){
+    TrainTimeTable(String trainNum, String trainShortCode, String fullDepTime){
         mTrainNum = trainNum;
         mDepShortCode = trainShortCode;
         mFullDepTime = fullDepTime;
     }
     @Override
     protected ZonedDateTime doInBackground(Integer... integers) {
-        return apiCallAndNotification();
+        return prepareToFetchAPI();
     }
 
     @Override
@@ -43,7 +35,7 @@ public class TrainNotification extends AsyncTask<Integer, Integer, ZonedDateTime
         super.onPostExecute(zonedDateTime);
     }
 
-    private ZonedDateTime apiCallAndNotification() {
+    private ZonedDateTime prepareToFetchAPI() {
         String url = "https://rata.digitraffic.fi/api/v1/trains/latest/" + mTrainNum;
         JSONObject departurePoint = new JSONObject();
         Instant originalTime = Instant.parse(mFullDepTime);
@@ -53,13 +45,14 @@ public class TrainNotification extends AsyncTask<Integer, Integer, ZonedDateTime
         oneHourUntilDeparture = oneHourUntilDeparture.minus(15, ChronoUnit.MINUTES);
         ZonedDateTime actualDepartureTime = null;
         // If current time is later than oneHourUntilDeparture
-        if (oneHourUntilDeparture.compareTo(ZonedDateTime.now()) < 0){
+        if (oneHourUntilDeparture.isBefore(ZonedDateTime.now())){
             departurePoint = fetchTrainInfo(url, departurePoint);
             actualDepartureTime = fetchTrainDepartureTime(departurePoint);
         }
         return actualDepartureTime;
     }
 
+    // Picks out the departure time from the JSONObject with the trains information
     private ZonedDateTime fetchTrainDepartureTime(JSONObject departurePoint) {
         String actualTime = "";
         String scheduledtime = "";
@@ -76,6 +69,7 @@ public class TrainNotification extends AsyncTask<Integer, Integer, ZonedDateTime
         }
     }
 
+    // API call to fetch the JSONObject with the trains information
     private JSONObject fetchTrainInfo(String url, JSONObject departurePoint){
         try {
             String JSONResponse = HTTPRequest(url);

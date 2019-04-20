@@ -18,11 +18,9 @@ public class HTTPGet extends AsyncTask<String, Void, String>
     @Override
     protected String doInBackground(String... strings)
     {
-        Log.d(TAG, "doInBackground: Making API call");
         String response = "";
         try
         {
-            System.out.println("Making an API call");
             URL url = new URL(strings[0]);
             HttpURLConnection con = (HttpURLConnection) url.openConnection();
             BufferedReader reader = new BufferedReader(new InputStreamReader(con.getInputStream()));

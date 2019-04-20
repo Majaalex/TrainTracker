@@ -2,6 +2,7 @@ package com.example.traintracker;
 
 import android.app.Notification;
 import android.app.job.JobParameters;
+import android.app.job.JobScheduler;
 import android.app.job.JobService;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.app.NotificationManagerCompat;
@@ -24,8 +25,7 @@ public class TrainJobService extends JobService {
 
     private String trainNum;
     private String startLocShortCode;
-    private String deptime;
-    private Boolean continueRunning = true;
+    private String depTime;
 
     @Override
     public boolean onStartJob(JobParameters params) {
@@ -35,12 +35,14 @@ public class TrainJobService extends JobService {
     }
 
     private void doBackgroundWork(JobParameters params){
+        // Extract all the extras
         trainNum = params.getExtras().getString(extraNum);
         startLocShortCode = params.getExtras().getString(extraDepLoc);
-        deptime = params.getExtras().getString(extraDepTime);
-        TrainNotification trainNotification = new TrainNotification(trainNum, startLocShortCode, deptime);
+        depTime = params.getExtras().getString(extraDepTime);
+        TrainTimeTable trainTimeTable = new TrainTimeTable(trainNum, startLocShortCode, depTime);
         try {
-            compareTimes(trainNotification.execute().get());
+            // Compare the times that the trainTimeTable returns
+            compareTimes(trainTimeTable.execute().get());
         } catch (ExecutionException e) {
             e.printStackTrace();
         } catch (InterruptedException e) {
@@ -57,47 +59,60 @@ public class TrainJobService extends JobService {
     private void notifyTrainDelayed(String departureTime){
         Notification builder = new NotificationCompat.Builder(getApplicationContext(), CHANNEL_1_ID)
                 .setSmallIcon(R.drawable.ic_train_green)
-                .setShowWhen(false)
+                .setShowWhen(true)
                 .setContentTitle("Train has been delayed at least 15 minutes.")
                 .setContentText("Train " + trainNum + " is delayed by at least 15 minutes and will depart at " + departureTime + ".")
                 .build();
         notificationManager.notify(150001, builder);
     }
 
+    // Compares the departure time to decide which notification to send out.
+    // Will stop the notifications once the departure time has passed.
     private void compareTimes(ZonedDateTime actualDepartureTime) {
         String hhmmTime;
         if (actualDepartureTime != null && actualDepartureTime.isAfter(ZonedDateTime.now())){
-            ZonedDateTime timeTableTime = Instant.parse(deptime).atZone(ZoneId.of("Europe/Helsinki"));
+            // Draw up different times to compare with
+            ZonedDateTime timeTableTime = Instant.parse(depTime).atZone(ZoneId.of("Europe/Helsinki"));
             ZonedDateTime timeTableTimePlusFifteen = timeTableTime.plus(15, ChronoUnit.MINUTES);
             ZonedDateTime thirtyUntilDeparture = actualDepartureTime.minus(30, ChronoUnit.MINUTES);
             ZonedDateTime tenUntilDeparture = actualDepartureTime.minus(10, ChronoUnit.MINUTES);
+            // HH:mm format of the actual time the train departs
             hhmmTime = DateTimeFormatter.ofPattern("HH:mm").format(actualDepartureTime);
-            if (ZonedDateTime.now().isAfter(thirtyUntilDeparture)){ // If there is less than 30 minutes until departure
-                if (ZonedDateTime.now().isAfter(tenUntilDeparture)){ // If the train is departing in under 10 minutes
-                    // Notify that there is under 10 minutes left
-                    notifyTrainDeprtingInSub10(hhmmTime);
+            // Go through a set of if statements to decide how long it is until the train departs
+            if (ZonedDateTime.now().isAfter(thirtyUntilDeparture)){ //1 If there is less than 30 minutes until departure
+                if (ZonedDateTime.now().isAfter(tenUntilDeparture)){ //2 If the train is departing in under 10 minutes
+                    if (timeTableTimePlusFifteen.isAfter(actualDepartureTime)){//3If there is under 10 minutes left
+                        notifyTrainDeprtingInSub10(hhmmTime);
+                    } else {
+                        notifyTrainDelayed(hhmmTime);
+                    }
                 } else {
-                    // Notify that the train is departing in under 30 minutes
-                    notifyTrainDepartingIn30(hhmmTime);
-                }
-            } else {
-                if (ZonedDateTime.now().isAfter(timeTableTime.minus(1, ChronoUnit.HOURS))){
+                    //2 Notify that the train is departing in under 30 minutes
                     if (timeTableTimePlusFifteen.isAfter(actualDepartureTime)){
-                        notifyTrainDepartingInAnHour(hhmmTime);
+                        notifyTrainDepartingIn30(hhmmTime);
                     } else {
                         notifyTrainDelayed(hhmmTime);
                     }
                 }
+            } else { //1 If there is more than 30 minutes until departure
+                if (ZonedDateTime.now().isAfter(timeTableTime.minus(1, ChronoUnit.HOURS))){ //
+                    if (timeTableTimePlusFifteen.isAfter(actualDepartureTime)){ // Departure in less than an hour
+                        notifyTrainDepartingInAnHour(hhmmTime);
+                    } else { // If we know the train is delayed more than an hour before departure
+                        notifyTrainDelayed(hhmmTime);
+                    }
+                }
             }
-        } else {
-            continueRunning = false;
+        } else { // If the current time has passed the trains departure time, stop the notifications
+            JobScheduler scheduler = (JobScheduler) getSystemService(JOB_SCHEDULER_SERVICE);
+            scheduler.cancelAll();
         }
     }
 
     private void notifyTrainDepartingInAnHour(String departureTime){
         Notification builder = new NotificationCompat.Builder(getApplicationContext(), CHANNEL_1_ID)
                 .setSmallIcon(R.drawable.ic_train_green)
-                .setShowWhen(false)
+                .setShowWhen(true)
                 .setContentTitle("Train departing in under an hour.")
                 .setContentText("Train " + trainNum + " is departing at " + departureTime + ".")
                 .build();
@@ -107,7 +122,7 @@ public class TrainJobService extends JobService {
     private void notifyTrainDepartingIn30(String departureTime){
         Notification builder = new NotificationCompat.Builder(getApplicationContext(), CHANNEL_1_ID)
                 .setSmallIcon(R.drawable.ic_train_green)
-                .setShowWhen(false)
+                .setShowWhen(true)
                 .setContentTitle("Train is departing in under 30 minutes.")
                 .setContentText("Train " + trainNum + " is departing at " + departureTime  + ".")
                 .build();
@@ -117,7 +132,7 @@ public class TrainJobService extends JobService {
     private void notifyTrainDeprtingInSub10(String departureTime){
         Notification builder = new NotificationCompat.Builder(getApplicationContext(), CHANNEL_1_ID)
                 .setSmallIcon(R.drawable.ic_train_green)
-                .setShowWhen(false)
+                .setShowWhen(true)
                 .setContentTitle("Train departing in under 10 minutes.")
                 .setContentText("Train " + trainNum + " is departing at " + departureTime + ".")
                 .build();
