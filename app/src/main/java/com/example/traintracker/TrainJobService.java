@@ -6,6 +6,7 @@ import android.app.job.JobScheduler;
 import android.app.job.JobService;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.app.NotificationManagerCompat;
+import android.util.Log;
 
 import java.time.Instant;
 import java.time.ZoneId;
@@ -22,13 +23,14 @@ import static com.example.traintracker.MainActivity.extraNum;
 public class TrainJobService extends JobService {
     public static final String TAG = "TrainJobService";
     private NotificationManagerCompat notificationManager;
-
+    private static final int delayThreshold = 5;
     private String trainNum;
     private String startLocShortCode;
     private String depTime;
 
     @Override
     public boolean onStartJob(JobParameters params) {
+        Log.d(TAG, "onStartJob: ");
         notificationManager = NotificationManagerCompat.from(getApplicationContext());
         doBackgroundWork(params);
         return true;
@@ -42,12 +44,19 @@ public class TrainJobService extends JobService {
         TrainTimeTable trainTimeTable = new TrainTimeTable(trainNum, startLocShortCode, depTime);
         try {
             // Compare the times that the trainTimeTable returns
-            compareTimes(trainTimeTable.execute().get());
+            Log.d(TAG, "doBackgroundWork: second exec");
+            ZonedDateTime time = trainTimeTable.execute().get();
+            //TODO: Crash here when train is running
+            //https://stackoverflow.com/questions/12575068/how-to-get-the-result-of-onpostexecute-to-main-activity-because-asynctask-is-a
+            Log.d(TAG, "doBackgroundWork: " + time.getDayOfMonth() + time.getDayOfWeek());
+            compareTimes(time);
+            Log.d(TAG, "doBackgroundWork: 2");
         } catch (ExecutionException e) {
             e.printStackTrace();
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
+        
         jobFinished(params, false);
     }
 
@@ -57,12 +66,12 @@ public class TrainJobService extends JobService {
 
     }
     private void notifyTrainDelayed(String departureTime){
-        Notification builder = new NotificationCompat.Builder(getApplicationContext(), CHANNEL_1_ID)
-                .setSmallIcon(R.drawable.ic_train_green)
-                .setShowWhen(true)
-                .setContentTitle("Train has been delayed at least 15 minutes.")
-                .setContentText("Train " + trainNum + " is delayed by at least 15 minutes and will depart at " + departureTime + ".")
-                .build();
+            Notification builder = new NotificationCompat.Builder(getApplicationContext(), CHANNEL_1_ID)
+                    .setSmallIcon(R.drawable.ic_train_green)
+                    .setShowWhen(true)
+                    .setContentTitle("Train has been delayed at least " + delayThreshold + " minutes.")
+                    .setContentText("Train " + trainNum + " is delayed by at least " + delayThreshold + " minutes and will depart at " + departureTime + ".")
+                    .build();
         notificationManager.notify(150001, builder);
     }
 
@@ -70,10 +79,11 @@ public class TrainJobService extends JobService {
     // Will stop the notifications once the departure time has passed.
     private void compareTimes(ZonedDateTime actualDepartureTime) {
         String hhmmTime;
+        Log.d(TAG, "compareTimes: ");
         if (actualDepartureTime != null && actualDepartureTime.isAfter(ZonedDateTime.now())){
             // Draw up different times to compare with
             ZonedDateTime timeTableTime = Instant.parse(depTime).atZone(ZoneId.of("Europe/Helsinki"));
-            ZonedDateTime timeTableTimePlusFifteen = timeTableTime.plus(15, ChronoUnit.MINUTES);
+            ZonedDateTime timeTableTimeDelayThreshold = timeTableTime.plus(delayThreshold, ChronoUnit.MINUTES);
             ZonedDateTime thirtyUntilDeparture = actualDepartureTime.minus(30, ChronoUnit.MINUTES);
             ZonedDateTime tenUntilDeparture = actualDepartureTime.minus(10, ChronoUnit.MINUTES);
             // HH:mm format of the actual time the train departs
@@ -81,14 +91,14 @@ public class TrainJobService extends JobService {
             // Go through a set of if statements to decide how long it is until the train departs
             if (ZonedDateTime.now().isAfter(thirtyUntilDeparture)){ //1 If there is less than 30 minutes until departure
                 if (ZonedDateTime.now().isAfter(tenUntilDeparture)){ //2 If the train is departing in under 10 minutes
-                    if (timeTableTimePlusFifteen.isAfter(actualDepartureTime)){//3If there is under 10 minutes left
+                    if (timeTableTimeDelayThreshold.isAfter(actualDepartureTime)){//3If there is under 10 minutes left
                         notifyTrainDeprtingInSub10(hhmmTime);
                     } else {
                         notifyTrainDelayed(hhmmTime);
                     }
                 } else {
                     //2 Notify that the train is departing in under 30 minutes
-                    if (timeTableTimePlusFifteen.isAfter(actualDepartureTime)){
+                    if (timeTableTimeDelayThreshold.isAfter(actualDepartureTime)){
                         notifyTrainDepartingIn30(hhmmTime);
                     } else {
                         notifyTrainDelayed(hhmmTime);
@@ -96,7 +106,7 @@ public class TrainJobService extends JobService {
                 }
             } else { //1 If there is more than 30 minutes until departure
                 if (ZonedDateTime.now().isAfter(timeTableTime.minus(1, ChronoUnit.HOURS))){ //
-                    if (timeTableTimePlusFifteen.isAfter(actualDepartureTime)){ // Departure in less than an hour
+                    if (timeTableTimeDelayThreshold.isAfter(actualDepartureTime)){ // Departure in less than an hour
                         notifyTrainDepartingInAnHour(hhmmTime);
                     } else { // If we know the train is delayed more than an hour before departure
                         notifyTrainDelayed(hhmmTime);

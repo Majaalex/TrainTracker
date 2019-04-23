@@ -1,6 +1,7 @@
 package com.example.traintracker;
 
 import android.os.AsyncTask;
+import android.util.Log;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -27,6 +28,7 @@ public class TrainTimeTable extends AsyncTask<Integer, Integer, ZonedDateTime> {
     }
     @Override
     protected ZonedDateTime doInBackground(Integer... integers) {
+        Log.d(TAG, "doInBackground: ");
         return prepareToFetchAPI();
     }
 
@@ -36,7 +38,9 @@ public class TrainTimeTable extends AsyncTask<Integer, Integer, ZonedDateTime> {
     }
 
     private ZonedDateTime prepareToFetchAPI() {
+        Log.d(TAG, "prepareToFetchAPI: before url");
         String url = "https://rata.digitraffic.fi/api/v1/trains/latest/" + mTrainNum;
+        Log.d(TAG, "prepareToFetchAPI: " + url);
         JSONObject departurePoint = new JSONObject();
         Instant originalTime = Instant.parse(mFullDepTime);
         ZonedDateTime zonedTime = originalTime.atZone(ZoneId.of("Europe/Helsinki"));

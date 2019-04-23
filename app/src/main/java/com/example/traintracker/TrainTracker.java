@@ -99,6 +99,7 @@ public class TrainTracker extends AsyncTask<Integer, LatLng, String> {
             return null;
         }
         String url = "https://rata.digitraffic.fi/api/v1/train-locations/latest/" + activity.trainNum;
+        Log.d(TAG, "fetchTrainCoordinates: " + url);
         String jResponse = "";
         LatLng position;
         try {
@@ -122,8 +123,8 @@ public class TrainTracker extends AsyncTask<Integer, LatLng, String> {
         String response = "";
         try
         {
-            System.out.println("Making an API call");
             URL url = new URL(strings[0]);
+            Log.d(TAG, "HTTPRequest: " + url);
             HttpURLConnection con = (HttpURLConnection) url.openConnection();
             BufferedReader reader = new BufferedReader(new InputStreamReader(con.getInputStream()));
 

@@ -83,13 +83,10 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
 
     // Cancel the JobService notifying about train departures
     private void cancelTrackerJob(){
-        if (notifierRunning){
             notifierRunning = false;
             JobScheduler scheduler = (JobScheduler) getSystemService(JOB_SCHEDULER_SERVICE);
             scheduler.cancelAll();
             //scheduler.cancel(JobId);
-        }
-
     }
 
     // Start the JobService to notify about the train departures

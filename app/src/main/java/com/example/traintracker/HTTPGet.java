@@ -22,6 +22,7 @@ public class HTTPGet extends AsyncTask<String, Void, String>
         try
         {
             URL url = new URL(strings[0]);
+            Log.d(TAG, "doInBackground: " + url);
             HttpURLConnection con = (HttpURLConnection) url.openConnection();
             BufferedReader reader = new BufferedReader(new InputStreamReader(con.getInputStream()));
 
