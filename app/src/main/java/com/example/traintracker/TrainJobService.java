@@ -48,6 +48,7 @@ public class TrainJobService extends JobService {
             ZonedDateTime time = trainTimeTable.execute().get();
             //TODO: Crash here when train is running
             //https://stackoverflow.com/questions/12575068/how-to-get-the-result-of-onpostexecute-to-main-activity-because-asynctask-is-a
+            //https://medium.com/@arj.sna/android-multiple-asynctasks-78b2f847a2ec
             Log.d(TAG, "doBackgroundWork: " + time.getDayOfMonth() + time.getDayOfWeek());
             compareTimes(time);
             Log.d(TAG, "doBackgroundWork: 2");
