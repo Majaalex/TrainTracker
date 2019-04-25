@@ -62,7 +62,7 @@ public class TrainTimeTable extends AsyncTask<Integer, Integer, ZonedDateTime> {
         String scheduledtime = "";
         try {
             scheduledtime = departurePoint.getString("scheduledTime");
-            actualTime = departurePoint.getString("actualTime");
+            actualTime = departurePoint.getString("liveEstimateTime");
         } catch (JSONException e) {
             e.printStackTrace();
         }

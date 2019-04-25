@@ -4,6 +4,7 @@ import android.app.Notification;
 import android.app.job.JobParameters;
 import android.app.job.JobScheduler;
 import android.app.job.JobService;
+import android.os.AsyncTask;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.app.NotificationManagerCompat;
 import android.util.Log;
@@ -45,13 +46,7 @@ public class TrainJobService extends JobService {
         try {
             // Compare the times that the trainTimeTable returns
             Log.d(TAG, "doBackgroundWork: second exec");
-            ZonedDateTime time = trainTimeTable.execute().get();
-            //TODO: Crash here when train is running
-            //https://stackoverflow.com/questions/12575068/how-to-get-the-result-of-onpostexecute-to-main-activity-because-asynctask-is-a
-            //https://medium.com/@arj.sna/android-multiple-asynctasks-78b2f847a2ec
-            Log.d(TAG, "doBackgroundWork: " + time.getDayOfMonth() + time.getDayOfWeek());
-            compareTimes(time);
-            Log.d(TAG, "doBackgroundWork: 2");
+            compareTimes(trainTimeTable.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR).get());
         } catch (ExecutionException e) {
             e.printStackTrace();
         } catch (InterruptedException e) {

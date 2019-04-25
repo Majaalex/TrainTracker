@@ -4,6 +4,7 @@ import android.app.job.JobInfo;
 import android.app.job.JobScheduler;
 import android.content.ComponentName;
 import android.content.Intent;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.PersistableBundle;
 import android.support.v7.app.AppCompatActivity;
@@ -119,7 +120,8 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
     // Start AsyncTask for tracking the trains position
     private void startTrainMarker() {
         TrainTracker tt = new TrainTracker(this);
-        tt.execute();
+        tt.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+        //tt.execute();
     }
 
     // Extract the train number and departure time from the intent
