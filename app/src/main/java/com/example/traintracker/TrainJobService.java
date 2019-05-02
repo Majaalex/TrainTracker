@@ -66,7 +66,7 @@ public class TrainJobService extends JobService {
                     .setSmallIcon(R.drawable.ic_train_green)
                     .setShowWhen(true)
                     .setContentTitle("Train has been delayed at least " + delayThreshold + " minutes.")
-                    .setContentText("Train " + trainNum + " is delayed by at least " + delayThreshold + " minutes and will depart at " + departureTime + ".")
+                    .setContentText("Train " + trainNum + " will depart at " + departureTime + ".")
                     .build();
         notificationManager.notify(150001, builder);
     }
